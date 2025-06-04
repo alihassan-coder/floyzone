@@ -2,6 +2,8 @@ from fastapi import APIRouter, HTTPException
 from config.database import db
 from validation.user_validation import UserRegister, UserLogin
 from utils.hash import hash_password, verify_password
+from utils.jwt_handler import create_access_token
+
 
 auth_router = APIRouter()
 
@@ -34,11 +36,17 @@ def login_user(user: UserLogin):
         if not existing_user or not verify_password(user.password, existing_user["password"]):
             raise HTTPException(status_code=401, detail="Invalid email or password")
         
+        # Create token
+        token_data = {"sub": existing_user["email"]}
+        token = create_access_token(token_data)
+
         return {
             "status": "success", 
             "message": "Login successful",
+            "access_token": token,
+            "token_type": "bearer",
             "code": 200
-            }
+        }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
