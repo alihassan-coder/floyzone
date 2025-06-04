@@ -1,0 +1,122 @@
+[
+  {
+    "question": "What is Fly Zone?",
+    "answer": "Fly Zone is a modern airline offering domestic and international flights with a focus on comfort, affordability, and excellent customer service."
+  },
+  {
+    "question": "How can I book a flight with Fly Zone?",
+    "answer": "You can book a flight through our website, mobile app, or by contacting our customer support. Just enter your origin, destination, travel dates, and passenger details."
+  },
+  {
+    "question": "What payment methods are accepted?",
+    "answer": "We accept all major credit and debit cards, PayPal, and digital wallets like Apple Pay and Google Pay."
+  },
+  {
+    "question": "What documents are required for domestic flights?",
+    "answer": "A valid government-issued photo ID, such as a national ID card or driver’s license, is required for domestic travel."
+  },
+  {
+    "question": "What documents are required for international flights?",
+    "answer": "A valid passport and visa (if applicable) are required for international flights. Please check destination-specific entry requirements."
+  },
+  {
+    "question": "What is Fly Zone’s baggage policy?",
+    "answer": "Passengers are allowed one carry-on and one personal item for free. Checked baggage may incur additional fees based on weight and route."
+  },
+  {
+    "question": "Can I bring pets on board?",
+    "answer": "Yes, small pets are allowed in the cabin if they meet size and weight limits. Larger pets must be checked. Please check our pet travel policy."
+  },
+  {
+    "question": "Is in-flight Wi-Fi available?",
+    "answer": "Yes, Wi-Fi is available on most Fly Zone aircraft. You can purchase a Wi-Fi pass during your booking or on board."
+  },
+  {
+    "question": "Can I cancel my booking and get a refund?",
+    "answer": "Yes, depending on your fare type. Some tickets are refundable with a cancellation fee, while others are non-refundable."
+  },
+  {
+    "question": "How do I change my flight date?",
+    "answer": "Log in to your Fly Zone account, go to 'My Bookings', and select 'Change Flight'. A date change fee may apply."
+  },
+  {
+    "question": "Can I select my seat in advance?",
+    "answer": "Yes, seat selection is available during booking or via 'Manage Booking'. Premium seats may have an additional charge."
+  },
+  {
+    "question": "What happens if my flight is delayed?",
+    "answer": "You will be notified via email or SMS. Fly Zone provides assistance, rebooking options, and compensation based on the delay duration."
+  },
+  {
+    "question": "How early should I arrive at the airport?",
+    "answer": "Please arrive at least 2 hours before domestic flights and 3 hours before international flights."
+  },
+  {
+    "question": "How do I check in for my flight?",
+    "answer": "You can check in online 24 hours before departure via our website or app, or check in at the airport counter."
+  },
+  {
+    "question": "Does Fly Zone offer meals during flights?",
+    "answer": "Yes, complimentary snacks and drinks are provided. Hot meals are available for purchase on select routes."
+  },
+  {
+    "question": "Is travel insurance available?",
+    "answer": "Yes, you can add travel insurance during the booking process to cover trip cancellations, delays, and emergencies."
+  },
+  {
+    "question": "Can I travel with an infant?",
+    "answer": "Yes, infants under 2 years old can travel on an adult’s lap. Infant seats and bassinets may be available on select flights."
+  },
+  {
+    "question": "Can children travel alone?",
+    "answer": "Yes, unaccompanied minor service is available for children aged 5–15 with prior arrangement and a service fee."
+  },
+  {
+    "question": "How can I join the Fly Zone rewards program?",
+    "answer": "Sign up on our website or app to start earning points on every flight and redeem them for future travel and upgrades."
+  },
+  {
+    "question": "How do I contact customer support?",
+    "answer": "You can reach us 24/7 via live chat, phone, or email. Visit the 'Contact Us' section on our website."
+  }
+,
+{
+    "question": "What is the Fly Zone cancellation policy?",
+    "answer": "Cancellation policies vary by fare type. Please refer to your booking confirmation or our website for specific details."
+  },
+  {
+    "question": "Are there any special services for passengers with disabilities?",
+    "answer": "Yes, we offer assistance for passengers with reduced mobility. Please inform us at least 48 hours before your flight."
+  },
+  {
+    "question": "Can I earn frequent flyer miles with Fly Zone?",
+    "answer": "Yes, you can earn miles through our rewards program and partner airlines. Check our website for details on earning and redeeming miles."
+  },{
+        "question": "What should I do if I miss my flight?",
+        "answer": "If you miss your flight, please contact our customer support immediately. We will assist you with rebooking options."
+    },
+    {
+        "question": "How can I provide feedback about my flight experience?",
+        "answer": "We value your feedback! You can submit your comments through our website or app under the 'Feedback' section."
+    },
+    {
+        "question": "Is there a mobile app for Fly Zone?",
+        "answer": "Yes, our mobile app is available for download on both iOS and Android platforms. It allows you to book flights, check in, and manage your bookings."
+    },
+    {
+        "question": "What should I do if I forget my booking reference number?",
+        "answer": "You can retrieve your booking reference by logging into your Fly Zone account or by checking your email confirmation."
+    },
+{
+    "question": "What should I do if I lose my luggage?",
+    "answer": "Report the issue immediately at the baggage claim desk. We will assist you in locating your luggage and provide compensation if necessary."
+  },
+  {
+    "question": "Does Fly Zone offer group bookings?",
+    "answer": "Yes, we offer special rates and services for group bookings. Please contact our group sales team for more information."
+  },
+  {
+    "question": "Can I bring food on board?",
+    "answer": "Yes, you can bring your own food, but it must comply with security regulations. Liquids over 100ml are not allowed."
+  }
+]

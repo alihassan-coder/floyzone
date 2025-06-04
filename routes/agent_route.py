@@ -10,5 +10,5 @@ async def agent_calling(
     request: QueryRequest, 
     current_user: dict = Depends(get_current_user) 
 ):
-    reply = await ask_agent(request.query)
+    reply = await ask_agent(request.query, current_user)
     return {"response": reply}
