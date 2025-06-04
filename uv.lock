@@ -68,6 +68,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "agents" },
+    { name = "bcrypt" },
     { name = "fastapi" },
     { name = "openai" },
     { name = "openai-agents" },
@@ -83,6 +84,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "agents", specifier = ">=1.4.0" },
+    { name = "bcrypt", specifier = ">=4.3.0" },
     { name = "fastapi", specifier = ">=0.115.12" },
     { name = "openai", specifier = ">=1.82.1" },
     { name = "openai-agents", specifier = ">=0.0.16" },
