@@ -3,11 +3,15 @@ from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool, han
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 from dotenv import load_dotenv
 from pydantic import BaseModel
+from config.database import db
 import os
 
 # Load environment variables
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# get the cruent login user from the database and print
+
 
 # OpenAI-compatible Gemini client
 client = AsyncOpenAI(
@@ -102,34 +106,46 @@ booking_agent.handoffs.append(main_agent)
 
 conversation_history = []
 
-# CLI loop with logging
-if __name__ == "__main__":
-    print("🛫 Welcome to FlyZone Assistant. Type 'exit' to leave.")
 
-    while True:
-        query = input("\n💬 You: ")
+async def ask_agent(query: str, current_user: dict):
+    # Use 'sub' as the email field from JWT
+    user = db.users.find_one({"email": current_user.get("sub")})
+    if user:
+        print(f"Current user in ask_agent: {current_user} | UUID: {user.get('uuid')}")
+    else:
+        print(f"Current user in ask_agent: {current_user} | UUID: Not found")
+    result = await Runner.run(main_agent, query)
+    return result.final_output
 
-        if query.lower() in {"exit", "quit"}:
-            print("👋 Goodbye!")
-            break
 
-        # Track user input
-        conversation_history.append({"role": "user", "content": query})
+# # CLI loop with logging
+# if __name__ == "__main__":
+#     print("🛫 Welcome to FlyZone Assistant. Type 'exit' to leave.")
 
-        print("🔍 Routing through Main Agent...")
+#     while True:
+#         query = input("\n💬 You: ")
 
-        # Run the conversation with main agent
-        result = Runner.run_sync(main_agent, query)
+#         if query.lower() in {"exit", "quit"}:
+#             print("👋 Goodbye!")
+#             break
 
-        # Track agent output
-        conversation_history.append({"role": "assistant", "content": result.final_output})
+#         # Track user input
+#         conversation_history.append({"role": "user", "content": query})
 
-        # Debug: print the actual agent who responded
-        print(f"\n🤖 Agent Responded: {result.final_output}")
-        print("================================================")
-        print(f"📜 input + output of user : {result.to_input_list()}")
-        print("================================================")
-        print(f"all detail : {result.last_agent}")
-        print("================================================")
-        print(f"last agent name  : {result.last_agent.name}")
-        print("====================================================")
+#         print("🔍 Routing through Main Agent...")
+
+#         # Run the conversation with main agent
+#         result = Runner.run_sync(main_agent, query)
+
+#         # Track agent output
+#         conversation_history.append({"role": "assistant", "content": result.final_output})
+
+#         # Debug: print the actual agent who responded
+#         print(f"\n🤖 Agent Responded: {result.final_output}")
+#         print("================================================")
+#         print(f"📜 input + output of user : {result.to_input_list()}")
+#         print("================================================")
+#         print(f"all detail : {result.last_agent}")
+#         print("================================================")
+#         print(f"last agent name  : {result.last_agent.name}")
+#         print("====================================================")

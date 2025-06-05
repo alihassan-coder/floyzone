@@ -3,6 +3,7 @@ from config.database import db
 from validation.user_validation import UserRegister, UserLogin
 from utils.hash import hash_password, verify_password
 from utils.jwt_handler import create_access_token
+import uuid
 
 
 auth_router = APIRouter()
@@ -17,17 +18,18 @@ def register_user(user: UserRegister):
 
         user_dict = user.dict()
         user_dict["password"] = hash_password(user.password)
+        user_dict["uuid"] = str(uuid.uuid4())  # Add UUID here
         db.users.insert_one(user_dict)
 
         return {
             "status": "success", 
             "message": "User registered successfully",
+            "uuid": user_dict["uuid"],  # Optionally return the UUID
             "code": 201
             }
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
-
 
 @auth_router.post("/login")
 def login_user(user: UserLogin):
