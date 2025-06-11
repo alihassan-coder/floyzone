@@ -1,5 +1,5 @@
 from openai import AsyncOpenAI
-from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool, handoff
+from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool,RunContextWrapper , handoff
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -9,9 +9,6 @@ import os
 # Load environment variables
 load_dotenv()
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-# get the cruent login user from the database and print
-
 
 # OpenAI-compatible Gemini client
 client = AsyncOpenAI(
@@ -25,6 +22,8 @@ class AirlineAgentContext(BaseModel):
     confirmation_number: str | None = None
     seat_number: str | None = None
     flight_number: str | None = None
+
+
 
 # FAQ Tool
 @function_tool(
@@ -44,21 +43,60 @@ async def faq_lookup_tool(question: str) -> str:
         return "We have free wifi on the plane. Join Airline-Wifi."
     return "Sorry, I don't know the answer to that question."
 
+
+
+# A function that gets the current user's UUID from the database
+def get_current_user_uuid(current_user: dict) -> str | None:
+    """
+    Get the current user's UUID from the database using their email.
+    """
+    user = db.users.find_one({"email": current_user.get("sub")})
+    if user:
+        return user.get("uuid")
+    return None
+
+
 # Booking Tool
-@function_tool(
-    name_override="book_seat_tool",
-    description_override="Books a seat for a passenger on a flight."
-)
-async def book_seat_tool(
+@function_tool
+def book_seat_tool(
+    context: RunContextWrapper,
     passenger_name: str,
+    flight_number: str,
     seat_number: str,
-    flight_number: str
 ) -> str:
-    confirmation_number = f"FZ{hash(passenger_name + seat_number + flight_number) % 10000}"
-    return (
-        f"Seat {seat_number} has been booked on flight {flight_number} for {passenger_name}. "
-        f"Your confirmation number is {confirmation_number}."
-    )
+    """
+    Arguments:
+    - passenger_name: Name of the passenger booking the flight.
+    - flight_number: Flight number to book.
+    - seat_number: Seat number to book.
+    Returns:
+    - Confirmation message with a unique confirmation number.
+    Example:
+    query : i want to book a flight for John Doe on flight 1234 in seat 12A
+    response: "Booking confirmed! Your confirmation number is CONF-JOH-1234-12A."
+    """
+
+    current_user = context.current_user if context else {}
+
+    # Get UUID from the database
+    user_uuid = get_current_user_uuid(current_user)
+
+    # Simulate booking logic
+    confirmation_number = f"CONF-{passenger_name[:3].upper()}-{flight_number}-{seat_number}"
+
+    # Update the database with booking info (if needed)
+    db.bookings.insert_one({
+        "passenger_name": passenger_name,
+        "flight_number": flight_number,
+        "seat_number": seat_number,
+        "confirmation_number": confirmation_number,
+        "user_uuid": user_uuid,
+    })
+
+    return f"Booking confirmed! Your confirmation number is {confirmation_number}."
+
+
+
 
 # Booking Agent
 booking_agent = Agent[AirlineAgentContext](
@@ -69,6 +107,8 @@ You are the booking agent for FlyZone.
 Ask the customer for missing info: passenger name, flight number, and seat number.
 Use the booking tool once you have all required info.
 You can use the conversation history to understand previous responses.
+and make sure to ask for any missing information only one time not again and again.
+not ask conferm information again and again,book the seat and return the confirmation number.
 """,
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
     tools=[book_seat_tool],
