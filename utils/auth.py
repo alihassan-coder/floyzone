@@ -19,3 +19,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         raise HTTPException(status_code=404, detail="User not found")
 
     return user
+
+# get current login user uuid 
+def get_current_user_uuid(current_user: dict) -> str | None:
+    return current_user.get("uuid")

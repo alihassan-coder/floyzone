@@ -1,9 +1,12 @@
 from openai import AsyncOpenAI
-from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool,RunContextWrapper , handoff
+from fastapi import Depends
+from agents import Agent, OpenAIChatCompletionsModel, Runner, function_tool, RunContextWrapper
 from agents.extensions.handoff_prompt import RECOMMENDED_PROMPT_PREFIX
 from dotenv import load_dotenv
 from pydantic import BaseModel
 from config.database import db
+from utils.auth import get_current_user_uuid , get_current_user
+from datetime import datetime
 import os
 
 # Load environment variables
@@ -16,7 +19,7 @@ client = AsyncOpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 )
 
-# Shared context
+# Shared context for conversation state
 class AirlineAgentContext(BaseModel):
     passenger_name: str | None = None
     confirmation_number: str | None = None
@@ -25,75 +28,45 @@ class AirlineAgentContext(BaseModel):
 
 
 
-# FAQ Tool
-@function_tool(
-    name_override="faq_lookup_tool",
-    description_override="Lookup frequently asked questions about the airline."
-)
-async def faq_lookup_tool(question: str) -> str:
-    if "bag" in question or "baggage" in question:
-        return "You are allowed to bring one bag on the plane. It must be under 50 pounds and 22x14x9 inches."
-    elif "seats" in question or "plane" in question:
-        return (
-            "There are 120 seats on the plane. "
-            "22 business class seats, 98 economy. "
-            "Exit rows: 4 and 16. Economy Plus: Rows 5-8."
-        )
-    elif "wifi" in question.lower():
-        return "We have free wifi on the plane. Join Airline-Wifi."
-    return "Sorry, I don't know the answer to that question."
-
-
-
-# A function that gets the current user's UUID from the database
-def get_current_user_uuid(current_user: dict) -> str | None:
-    """
-    Get the current user's UUID from the database using their email.
-    """
-    user = db.users.find_one({"email": current_user.get("sub")})
-    if user:
-        return user.get("uuid")
-    return None
-
+def get_my_uuid(current_user: dict = Depends(get_current_user)):
+    uuid = get_current_user_uuid(current_user)
+    return {"uuid": uuid}
 
 # Booking Tool
 @function_tool
 def book_seat_tool(
-    context: RunContextWrapper,
     passenger_name: str,
     flight_number: str,
     seat_number: str,
 ) -> str:
     """
-    Arguments:
-    - passenger_name: Name of the passenger booking the flight.
-    - flight_number: Flight number to book.
-    - seat_number: Seat number to book.
+    Book a flight seat for the passenger.
+    
+    Args:
+        passenger_name (str): Name of the passenger.
+        flight_number (str): Flight number to book.
+        seat_number (str): Seat number to book.
+    
     Returns:
-    - Confirmation message with a unique confirmation number.
-    Example:
-    query : i want to book a flight for John Doe on flight 1234 in seat 12A
-    response: "Booking confirmed! Your confirmation number is CONF-JOH-1234-12A."
+        str: Confirmation number for the booking.
     """
-
-    current_user = context.current_user if context else {}
-
-    # Get UUID from the database
-    user_uuid = get_current_user_uuid(current_user)
-
     # Simulate booking logic
-    confirmation_number = f"CONF-{passenger_name[:3].upper()}-{flight_number}-{seat_number}"
+    confirmation_number = f"CONF-{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
-    # Update the database with booking info (if needed)
+    
     db.bookings.insert_one({
         "passenger_name": passenger_name,
         "flight_number": flight_number,
         "seat_number": seat_number,
         "confirmation_number": confirmation_number,
-        "user_uuid": user_uuid,
+        "uuid": get_my_uuid(),
     })
+    # Log the booking details
+    print(f"Booking confirmed for {passenger_name} on flight {flight_number}, seat {seat_number}. Confirmation number: {confirmation_number}")
+    return confirmation_number
+    # add booking details to the database with uuid
 
-    return f"Booking confirmed! Your confirmation number is {confirmation_number}."
+
 
 
 
@@ -104,11 +77,10 @@ booking_agent = Agent[AirlineAgentContext](
     handoff_description="Handles booking of flights.",
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
 You are the booking agent for FlyZone.
-Ask the customer for missing info: passenger name, flight number, and seat number.
-Use the booking tool once you have all required info.
-You can use the conversation history to understand previous responses.
-and make sure to ask for any missing information only one time not again and again.
-not ask conferm information again and again,book the seat and return the confirmation number.
+Ask the customer only once for missing info: passenger name, flight number, or seat number.
+Once you have all info, use the book_seat_tool and return the confirmation number.
+Avoid asking for the same detail more than once.
+when user provides all details, confirm the booking you not ask for confirmation again only book seat.
 """,
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
     tools=[book_seat_tool],
@@ -120,12 +92,21 @@ faq_agent = Agent[AirlineAgentContext](
     handoff_description="Answers questions about FlyZone airline policies.",
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
 You are an FAQ agent.
-Use the FAQ lookup tool to answer questions.
-If unsure or if the user wants to book, hand off to the main agent.
-Use the conversation history to detect booking-related questions.
+Answer questions about FlyZone airline policies from this knowledge base:
+   FlyZone is a modern global airline based in Dubai, UAE, serving over 90 cities worldwide with a fleet of 120+ aircraft including Boeing 787s and Airbus A350s. Whether you're a first-time flyer or a frequent traveler, FlyZone offers seamless booking, 24/7 customer support, and multilingual AI-powered assistants to answer your questions. Choose from Economy, Business, or Elite First Class—each with reclining seats, USB charging, and HD entertainment. Back seats in Economy include extra legroom rows, and Business/First offer full-flat beds, lounge access, and luxury kits. Enjoy halal-certified meals, vegetarian options, and kids’ menus, all freshly prepared. Every passenger gets 10–40kg baggage allowance, free hand-carry, and real-time flight tracking. Join our SkyFly Rewards to earn miles for upgrades and discounts. FlyZone’s mobile app supports e-boarding passes, seat selection, and live chat help. Safety, comfort, and innovation—FlyZone is your sky companion.
+
+get answers to questions like:
+   query: what is the baggage allowance for FlyZone?
+   answer: FlyZone offers a baggage allowance of 10–40kg depending on the class of service. Each passenger is also allowed free hand-carry luggage and real-time flight tracking.
+    query: what are the meal options on FlyZone flights?
+    answer: FlyZone provides halal-certified meals, vegetarian options, and kids’ menus, all freshly prepared for your journey.
+
+Note: If the question is not answered in the knowledge base, politely say you don't have that information contect the customer support.
+-make sure the answer is concise and relevant to the question and detail 
+-and avoid asking for the same detail more than once.
+-if you have ans to the question, provide it directly without asking for confirmation.
 """,
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
-    tools=[faq_lookup_tool],
 )
 
 # Main Agent
@@ -133,9 +114,10 @@ main_agent = Agent[AirlineAgentContext](
     name="FlyZone Main Agent",
     instructions=f"""{RECOMMENDED_PROMPT_PREFIX}
 You are the FlyZone main assistant.
-Route the query to either the FAQ agent or Booking agent based on content.
-If the query is unsupported, politely inform the user.
-Use the conversation history to better understand context.""",
+Route queries to the FAQ or Booking agent based on content.
+If the query is unsupported, politely say so.
+Use conversation history for better understanding.
+""",
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
     handoffs=[faq_agent, booking_agent],
 )
@@ -144,48 +126,12 @@ Use the conversation history to better understand context.""",
 faq_agent.handoffs.append(main_agent)
 booking_agent.handoffs.append(main_agent)
 
-conversation_history = []
-
-
+# Final function to ask the agent
 async def ask_agent(query: str, current_user: dict):
-    # Use 'sub' as the email field from JWT
-    user = db.users.find_one({"email": current_user.get("sub")})
-    if user:
-        print(f"Current user in ask_agent: {current_user} | UUID: {user.get('uuid')}")
-    else:
-        print(f"Current user in ask_agent: {current_user} | UUID: Not found")
-    result = await Runner.run(main_agent, query)
-    return result.final_output
-
-
-# # CLI loop with logging
-# if __name__ == "__main__":
-#     print("🛫 Welcome to FlyZone Assistant. Type 'exit' to leave.")
-
-#     while True:
-#         query = input("\n💬 You: ")
-
-#         if query.lower() in {"exit", "quit"}:
-#             print("👋 Goodbye!")
-#             break
-
-#         # Track user input
-#         conversation_history.append({"role": "user", "content": query})
-
-#         print("🔍 Routing through Main Agent...")
-
-#         # Run the conversation with main agent
-#         result = Runner.run_sync(main_agent, query)
-
-#         # Track agent output
-#         conversation_history.append({"role": "assistant", "content": result.final_output})
-
-#         # Debug: print the actual agent who responded
-#         print(f"\n🤖 Agent Responded: {result.final_output}")
-#         print("================================================")
-#         print(f"📜 input + output of user : {result.to_input_list()}")
-#         print("================================================")
-#         print(f"all detail : {result.last_agent}")
-#         print("================================================")
-#         print(f"last agent name  : {result.last_agent.name}")
-#         print("====================================================")
+    try:
+        user = db.users.find_one({"email": current_user.get("sub")})
+        print(f"Current user in ask_agent: {current_user} | UUID: {user.get('uuid') if user else 'Not found'}")
+        result = await Runner.run(main_agent, query, context=current_user)
+        return result.final_output
+    except Exception as e:
+        return f"Agent failed due to error: {str(e)}"

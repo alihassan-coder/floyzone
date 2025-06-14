@@ -1,7 +1,10 @@
 # main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from routes.auth_routes import auth_router
 from routes.agent_route import agent_route 
+
+
+from utils.auth import  get_current_user ,get_current_user_uuid
 
 app = FastAPI()
 
@@ -15,7 +18,7 @@ def read_root():
         return {
             "message": "Welcome to the Fly Zone API",
             "status": "Running",
-            "code": 200
+            "code": 200,
         }
     except Exception as e:
         return {
@@ -24,3 +27,9 @@ def read_root():
             "status": "Error",
             "code": 500
         }
+    
+
+@app.get("/me")
+def get_my_uuid(current_user: dict = Depends(get_current_user)):
+    uuid = get_current_user_uuid(current_user)
+    return {"uuid": uuid}
