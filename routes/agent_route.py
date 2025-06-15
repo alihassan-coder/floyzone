@@ -8,7 +8,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 agent_route = APIRouter()
 
-@agent_route.post("/ask-agent")
+@agent_route.post("/query")
 async def agent_calling(
     request: QueryRequest,
     token: str = Depends(oauth2_scheme)
@@ -25,6 +25,7 @@ async def agent_calling(
         reply = await ask_agent(request.query)
         return {"response": reply}
     except Exception as e:
+        print(f"Error in agent_calling: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

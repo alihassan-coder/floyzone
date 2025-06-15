@@ -26,9 +26,6 @@ class AirlineAgentContext(BaseModel):
     flight_number: str | None = None
 
 
-current_use_uuid = get_current_user_uuid()
-
-
 
 # Booking Tool
 @function_tool
@@ -119,6 +116,42 @@ def faq_lookup_tool(question: str) -> str:
     return answer
     
 
+@function_tool
+async def get_user_bookings_tool() -> str:
+    """
+    Get all flight bookings for the current user.
+    
+    Returns:
+        str: List of user's bookings with details.
+    """
+    print("+++++++++++")
+    print("get user bookings tool running")
+    print("+++++++++++")
+    try:
+        # Get the current user's UUID from the token
+        user_uuid = await get_current_user_uuid()
+        
+        # Fetch all bookings for the user
+        bookings = list(db.bookings.find({"user_uuid": user_uuid}))
+        
+        if not bookings:
+            return "You don't have any flight bookings yet."
+        
+        # Format the bookings into a readable string
+        booking_details = []
+        for booking in bookings:
+            booking_details.append(
+                f"Flight: {booking['flight_number']}, "
+                f"Passenger: {booking['passenger_name']}, "
+                f"Seat: {booking['seat_number']}, "
+                f"Confirmation: {booking['confirmation_number']}"
+            )
+        
+        return "Your bookings:\n" + "\n".join(booking_details)
+    except Exception as e:
+        print("Error in get_user_bookings_tool:", str(e))
+        print("+++++++++++")
+        return f"Failed to fetch bookings due to error: {str(e)}"
 
 # Booking Agent
 booking_agent = Agent[AirlineAgentContext](
@@ -187,7 +220,7 @@ Make sure you:
 ,
 
     model=OpenAIChatCompletionsModel(model="gemini-2.0-flash", openai_client=client),
-    handoffs=[booking_agent],
+    handoffs=[booking_agent, faq_agent]
 )
 
 booking_agent.handoffs.append(main_agent)
