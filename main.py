@@ -1,15 +1,15 @@
 # main.py
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI
+
 from routes.auth_routes import auth_router
-from routes.agent_route import agent_route 
-
-
-from utils.auth import  get_current_user ,get_current_user_uuid
+from routes.agent_route import agent_route
+from routes.booking_route import booking_route
 
 app = FastAPI()
 
 app.include_router(auth_router, prefix="/auth", tags=["auth"])
 app.include_router(agent_route, prefix="/agent", tags=["agent"])
+app.include_router(booking_route, prefix="/bookings", tags=["bookings"])
 
 
 @app.get("/")
@@ -29,7 +29,3 @@ def read_root():
         }
     
 
-@app.get("/me")
-def get_my_uuid(current_user: dict = Depends(get_current_user)):
-    uuid = get_current_user_uuid(current_user)
-    return {"uuid": uuid}
